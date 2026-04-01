@@ -1,0 +1,23 @@
+{
+  "telegram": {
+    "bot_token": "YOUR_TELEGRAM_BOT_TOKEN",
+    "chat_id": "YOUR_TELEGRAM_CHAT_ID"
+  },
+  "opinion": {
+    "api_key": "YOUR_OPINION_API_KEY"
+  },
+  "wallets": [
+    {
+      "name": "Example-Wallet",
+      "owner_wallet": "0x1111111111111111111111111111111111111111",
+      "poly_wallet": "0x2222222222222222222222222222222222222222",
+      "op_wallet": "0x3333333333333333333333333333333333333333"
+    },
+    {
+      "name": "Example-Without-Op-Wallet",
+      "owner_wallet": "0x4444444444444444444444444444444444444444",
+      "poly_wallet": "0x5555555555555555555555555555555555555555",
+      "op_wallet": ""
+    }
+  ]
+}

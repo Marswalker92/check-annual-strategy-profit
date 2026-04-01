@@ -1,0 +1,7 @@
+config/local_config.json
+data/reports/
+data/history/
+data/charts/
+data/logs/
+__pycache__/
+*.pyc

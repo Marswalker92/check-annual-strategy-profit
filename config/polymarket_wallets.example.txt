@@ -1,0 +1,14 @@
+# Deprecated for normal use.
+# The script now loads sensitive wallet data from local_config.json by default.
+# Use this file only when you explicitly pass --wallet-file.
+#
+# Supported formats:
+# 1) wallet_name, wallet_address
+# 2) wallet_name, owner_wallet, poly_wallet
+# 3) wallet_name, owner_wallet, poly_wallet, op_wallet
+#
+# If op_wallet is empty in the 4-column format, the extra OP-side USDT balance is treated as 0.
+#
+# Example:
+# Example-Wallet, 0x1111111111111111111111111111111111111111
+# Example-Mapped, 0x1111111111111111111111111111111111111111, 0x2222222222222222222222222222222222222222, 0x3333333333333333333333333333333333333333
