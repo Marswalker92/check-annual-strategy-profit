@@ -1,0 +1,14 @@
+[project]
+name = "check-annual-strategy-profit"
+version = "0.1.0"
+description = "Daily and monthly cross-platform portfolio reporting for Polymarket and Opinion wallets."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Marswalker92", email = "tothemars.eth@gmail.com" }
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

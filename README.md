@@ -18,6 +18,8 @@ Sensitive data is not meant to live in tracked code files. The normal workflow i
 - `data/charts/`: generated SVG charts
 - `data/logs/`: cron runtime logs
 - `README.md`: project usage and rule documentation
+- `LICENSE`: project license
+- `pyproject.toml`: basic project metadata
 
 ## Main Files
 
