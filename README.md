@@ -1,53 +1,27 @@
 # Check Annual Strategy Profit
 
-This project generates a daily cross-platform portfolio report for a fixed wallet list, can push the latest table to Telegram, keeps daily history, and generates a total floating PnL trend chart.
+This project generates portfolio reports for a fixed wallet list across `Polymarket` and `Opinion`.
 
-Sensitive data is not meant to live in tracked code files. The normal workflow is:
+It supports:
 
-- keep your real secrets and wallet addresses in `config/local_config.json`
-- keep only `config/local_config.example.json` in GitHub
-- keep generated reports, histories, charts, and logs out of Git via `.gitignore`
+- daily report generation
+- monthly summary generation
+- Telegram push
+- Telegram `/check` command for on-demand report generation
+- daily total floating PnL history and chart output
 
-## Layout
+Sensitive data is intentionally kept out of tracked code. Real secrets and wallet addresses should stay in a local-only config file.
 
-- `src/`: main source code
-- `src/platforms/`: platform-specific API and balance logic
-- `config/`: local secrets, wallet config, and safe examples
-- `data/reports/`: generated markdown reports
-- `data/history/`: generated JSON history files
-- `data/charts/`: generated PNG charts
-- `data/logs/`: cron runtime logs
-- `README.md`: project usage and rule documentation
-- `LICENSE`: project license
-- `pyproject.toml`: basic project metadata
+## Repository Layout
 
-## Main Files
+- `src/`: source code
+- `src/platforms/`: platform-specific fetch and balance logic
+- `config/`: config examples
+- `data/`: generated reports, history, charts, and logs
 
-- `src/query_poly_positions.py`: main executable script, keeps argument parsing and orchestration
-- `src/config_loader.py`: local config loading and secret resolution
-- `src/wallets.py`: wallet record parsing and wallet source loading
-- `src/platforms/polymarket.py`: Polymarket positions and Polygon `USDC.e` balance logic
-- `src/platforms/opinion.py`: Opinion positions and BNB-chain `USDT` balance logic
-- `src/reporting.py`: markdown and Telegram table rendering
-- `src/history.py`: daily and monthly history read/write logic
-- `src/charts.py`: PNG trend chart generation
-- `src/telegram_push.py`: Telegram send helper
-- `src/telegram_command_bot.py`: Telegram command listener for `/check`
-- `config/local_config.json`: real local-only config file, ignored by Git
-- `config/local_config.example.json`: safe example config file to keep in GitHub
-- `config/polymarket_wallets.example.txt`: optional wallet file format reference
-- `data/reports/polymarket_portfolio_report.md`: latest generated daily report
-- `data/history/polymarket_portfolio_history.json`: daily floating PnL snapshot history
-- `data/history/total_floating_pnl_history.json`: daily history of the `总计` row's `当前浮动盈亏`
-- `data/charts/total_floating_pnl_trend.png`: PNG line chart generated from the daily total floating PnL history
-- `data/reports/monthly-report.md`: latest generated monthly report
-- `data/history/monthly_portfolio_history.json`: monthly portfolio snapshot history
+## Local Config
 
-## Local Config Format
-
-The default runtime source is `config/local_config.json`.
-
-Expected shape:
+Runtime expects a local config file with this shape:
 
 ```json
 {
@@ -69,31 +43,31 @@ Expected shape:
 }
 ```
 
-## Wallet File Format
+Tracked files only include examples such as:
 
-If you explicitly pass `--wallet-file`, these formats are supported:
+- `config/local_config.example.json`
+- `config/polymarket_wallets.example.txt`
+- `config/op_test_wallets.example.txt`
 
-- Legacy 2-column:
-  `wallet_name, wallet_address`
-- 3-column:
-  `wallet_name, owner_wallet, poly_wallet`
-- Preferred 4-column:
-  `wallet_name, owner_wallet, poly_wallet, op_wallet`
+## Wallet Model
 
-Interpretation:
+Supported wallet formats when using a wallet file:
 
-- `owner_wallet`: main wallet used to query Opinion positions
-- `poly_wallet`: Polymarket wallet used to query Polymarket positions and Polygon USDC.e balance
-- `op_wallet`: Opinion-side wallet used to query extra BNB-chain USDT balance
+- `wallet_name, wallet_address`
+- `wallet_name, owner_wallet, poly_wallet`
+- `wallet_name, owner_wallet, poly_wallet, op_wallet`
 
-Special rule:
+Meaning:
 
-- If `op_wallet` is empty in the 4-column format, the extra Opinion-side USDT balance is treated as `0`
-- It does not fall back to `owner_wallet`
+- `owner_wallet`: used for `Opinion` positions
+- `poly_wallet`: used for `Polymarket` positions and Polygon `USDC.e` balance
+- `op_wallet`: used for extra BNB-chain `USDT` balance on the `Opinion` side
 
-## Report Contents
+If `op_wallet` is empty, the extra `USDT` balance is treated as `0`.
 
-The generated report includes these columns:
+## Report Rules
+
+Report columns:
 
 - `钱包名称`
 - `平台`
@@ -103,171 +77,70 @@ The generated report includes these columns:
 - `当前浮动盈亏`
 - `当天较前一天浮动盈亏变化`
 
-Rows are rendered separately by platform:
+Rendering rules:
 
-- `Poly`
-- `OP`
+- `Poly` and `OP` are shown as separate rows
+- rows that round to all-zero visible values are hidden
+- the final column is day-over-day floating PnL change
+- the `总计` row sums rendered rows only
 
-Rows whose visible numeric values round to `0.00` are hidden to keep the table compact.
+## Portfolio Logic
 
-The last column is:
+`Poly portfolio`:
 
-`today floating_pnl - previous day floating_pnl`
+- Polymarket positions total from `poly_wallet`
+- plus Polygon `USDC.e` balance of `poly_wallet`
 
-The `总计` row in that last column is the sum of the day-over-day floating PnL changes across all rendered rows.
+`OP portfolio`:
 
-## Portfolio Calculation Rules
+- Opinion positions total from `owner_wallet`
+- plus BNB-chain `USDT` balance of `op_wallet`
 
-### Poly
+## Outputs
 
-`Poly portfolio` is:
+Typical generated files:
 
-- the Polymarket positions total from `poly_wallet`
-- plus the Polygon `USDC.e` balance of `poly_wallet`
+- daily markdown report
+- monthly markdown report
+- daily wallet floating PnL history
+- monthly portfolio history
+- daily total floating PnL history
+- daily total floating PnL PNG chart
 
-Current token used:
+## Usage
 
-- `USDC.e`: `0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174`
-
-### OP
-
-`OP portfolio` is:
-
-- the Opinion positions total from `owner_wallet`
-- plus the BNB-chain `USDT` balance of `op_wallet`
-
-If `op_wallet` is empty, the extra USDT balance part is treated as `0`.
-
-Current token used:
-
-- `USDT`: `0x55d398326f99059fF775485246999027B3197955`
-
-## History Logic
-
-The script writes one floating PnL snapshot per rendered wallet row per UTC date into `data/history/polymarket_portfolio_history.json`.
-
-When generating the current report, it looks up the previous UTC day in that history file and computes the new day-over-day column from that baseline.
-
-If there is no snapshot for the previous day, the script falls back to `0.00` as the baseline for that wallet row.
-
-In addition, the script records the `总计` row's `当前浮动盈亏` once per run into `data/history/total_floating_pnl_history.json`, then regenerates `data/charts/total_floating_pnl_trend.png`.
-
-The PNG chart is a 2D line chart:
-
-- X axis: date
-- Y axis: total current floating PnL
-
-## Telegram Push
-
-The script supports Telegram push with:
-
-- values from `config/local_config.json`
-- optional `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` environment variables
-- optional CLI arguments:
-  - `--send-telegram`
-  - `--telegram-bot-token`
-  - `--telegram-chat-id`
-
-The Telegram message uses monospaced `<pre>` formatting and pads each column to improve alignment.
-
-Sensitive Telegram credentials are intentionally not documented in this README.
-
-## Telegram Command Bot
-
-There is also a Telegram listener script:
+Examples:
 
 ```bash
-cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit
+python3 src/query_poly_positions.py
+python3 src/query_poly_positions.py --send-telegram
+python3 src/query_poly_positions.py --monthly-report
+python3 src/query_poly_positions.py --stdout-table
 python3 src/telegram_command_bot.py
 ```
 
-Behavior:
+Telegram command bot behavior:
 
-- it long-polls the configured Telegram bot
-- it accepts `/check` from the configured `telegram.chat_id`
-- on `/check`, it runs the same daily report script immediately
-- it sends the same report table format as the normal 23:00 scheduled run
-
-Supported commands:
-
-- `/check`: generate and send the latest realtime portfolio table
+- `/check`: run the latest report immediately and send the current table
 - `/start`
 - `/help`
 
-Operational note:
+## Automation
 
-- this listener must be running continuously if you want Telegram commands to work
-- it can be installed as a `systemd --user` service for auto-start on boot
+Typical deployment keeps two automation paths:
 
-## Manual Run
+- a scheduled daily report run
+- a long-running Telegram command listener for `/check`
 
-Generate only the local report:
+Exact machine-specific service definitions, local paths, and scheduler commands are intentionally not documented here.
 
-```bash
-cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit
-python3 src/query_poly_positions.py
-```
+## Git Safety
 
-This default command reads:
+Do not commit:
 
-- wallets from `config/local_config.json`
-- Telegram credentials from `config/local_config.json` or env vars
-- Opinion API key from `config/local_config.json` or env vars
+- real local config files
+- generated data files
+- logs
+- cache files
 
-Generate the report and send it to Telegram:
-
-```bash
-cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit
-python3 src/query_poly_positions.py --send-telegram
-```
-
-Print the markdown table to stdout:
-
-```bash
-cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit
-python3 src/query_poly_positions.py --stdout-table
-```
-
-Use an explicit wallet file only if needed:
-
-```bash
-cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit
-python3 src/query_poly_positions.py --wallet-file config/polymarket_wallets.example.txt --stdout-table
-```
-
-Generate the monthly report:
-
-```bash
-cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit
-python3 src/query_poly_positions.py --monthly-report
-```
-
-## Scheduled Run
-
-A cron job is configured on this machine to run every day at `23:00`:
-
-```cron
-0 23 * * * cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit && /usr/bin/python3 src/query_poly_positions.py >> /home/young-ai/code/polymarket_relate/check-annual-strategy-profit/data/logs/report_cron.log 2>&1
-```
-
-This daily run also:
-
-- updates `data/reports/polymarket_portfolio_report.md`
-- updates `data/history/polymarket_portfolio_history.json`
-- appends or refreshes the daily `总计` current floating PnL entry in `data/history/total_floating_pnl_history.json`
-- regenerates `data/charts/total_floating_pnl_trend.png`
-- does not auto-push the daily report to Telegram
-
-A separate cron job is configured to run the monthly report at `22:00` on day `28` of each month:
-
-```cron
-0 22 28 * * * cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit && /usr/bin/python3 src/query_poly_positions.py --monthly-report --send-telegram >> /home/young-ai/code/polymarket_relate/check-annual-strategy-profit/data/logs/monthly_report_cron.log 2>&1
-```
-
-## Operational Notes
-
-- The scheduled task runs only if the machine is powered on at the scheduled time
-- After a reboot, cron remains configured and future daily runs continue automatically
-- If the machine is offline exactly at the scheduled time, that missed run is not automatically replayed later
-- Runtime logs are appended to `data/logs/`
-- The daily PNG chart is generated locally; it does not materially increase API cost
+Use `.gitignore` to keep local secrets and runtime artifacts out of GitHub.
