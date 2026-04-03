@@ -78,7 +78,7 @@ def parse_args() -> argparse.Namespace:
         "--total-floating-pnl-chart-file",
         default=str(DEFAULT_TOTAL_FLOATING_PNL_CHART_FILE),
         help=(
-            "Path to the generated daily total floating PnL SVG chart "
+            "Path to the generated daily total floating PnL PNG chart "
             f"(default: {DEFAULT_TOTAL_FLOATING_PNL_CHART_FILE})"
         ),
     )

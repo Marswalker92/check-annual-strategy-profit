@@ -1,0 +1,14 @@
+[Unit]
+Description=Telegram command bot for on-demand portfolio checks
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/young-ai/code/polymarket_relate/check-annual-strategy-profit
+ExecStart=/usr/bin/python3 /home/young-ai/code/polymarket_relate/check-annual-strategy-profit/src/telegram_command_bot.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

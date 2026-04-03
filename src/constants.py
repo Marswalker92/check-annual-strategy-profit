@@ -25,7 +25,7 @@ DEFAULT_HISTORY_FILE = HISTORY_DIR / "polymarket_portfolio_history.json"
 DEFAULT_TOTAL_FLOATING_PNL_HISTORY_FILE = (
     HISTORY_DIR / "total_floating_pnl_history.json"
 )
-DEFAULT_TOTAL_FLOATING_PNL_CHART_FILE = CHARTS_DIR / "total_floating_pnl_trend.svg"
+DEFAULT_TOTAL_FLOATING_PNL_CHART_FILE = CHARTS_DIR / "total_floating_pnl_trend.png"
 DEFAULT_MONTHLY_OUTPUT_FILE = REPORTS_DIR / "monthly-report.md"
 DEFAULT_MONTHLY_HISTORY_FILE = HISTORY_DIR / "monthly_portfolio_history.json"
 DEFAULT_CONFIG_FILE = CONFIG_DIR / "local_config.json"

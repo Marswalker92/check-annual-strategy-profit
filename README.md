@@ -15,7 +15,7 @@ Sensitive data is not meant to live in tracked code files. The normal workflow i
 - `config/`: local secrets, wallet config, and safe examples
 - `data/reports/`: generated markdown reports
 - `data/history/`: generated JSON history files
-- `data/charts/`: generated SVG charts
+- `data/charts/`: generated PNG charts
 - `data/logs/`: cron runtime logs
 - `README.md`: project usage and rule documentation
 - `LICENSE`: project license
@@ -30,15 +30,16 @@ Sensitive data is not meant to live in tracked code files. The normal workflow i
 - `src/platforms/opinion.py`: Opinion positions and BNB-chain `USDT` balance logic
 - `src/reporting.py`: markdown and Telegram table rendering
 - `src/history.py`: daily and monthly history read/write logic
-- `src/charts.py`: SVG trend chart generation
+- `src/charts.py`: PNG trend chart generation
 - `src/telegram_push.py`: Telegram send helper
+- `src/telegram_command_bot.py`: Telegram command listener for `/check`
 - `config/local_config.json`: real local-only config file, ignored by Git
 - `config/local_config.example.json`: safe example config file to keep in GitHub
 - `config/polymarket_wallets.example.txt`: optional wallet file format reference
 - `data/reports/polymarket_portfolio_report.md`: latest generated daily report
 - `data/history/polymarket_portfolio_history.json`: daily floating PnL snapshot history
 - `data/history/total_floating_pnl_history.json`: daily history of the `总计` row's `当前浮动盈亏`
-- `data/charts/total_floating_pnl_trend.svg`: SVG line chart generated from the daily total floating PnL history
+- `data/charts/total_floating_pnl_trend.png`: PNG line chart generated from the daily total floating PnL history
 - `data/reports/monthly-report.md`: latest generated monthly report
 - `data/history/monthly_portfolio_history.json`: monthly portfolio snapshot history
 
@@ -149,9 +150,9 @@ When generating the current report, it looks up the previous UTC day in that his
 
 If there is no snapshot for the previous day, the script falls back to `0.00` as the baseline for that wallet row.
 
-In addition, the script records the `总计` row's `当前浮动盈亏` once per run into `data/history/total_floating_pnl_history.json`, then regenerates `data/charts/total_floating_pnl_trend.svg`.
+In addition, the script records the `总计` row's `当前浮动盈亏` once per run into `data/history/total_floating_pnl_history.json`, then regenerates `data/charts/total_floating_pnl_trend.png`.
 
-The SVG chart is a 2D line chart:
+The PNG chart is a 2D line chart:
 
 - X axis: date
 - Y axis: total current floating PnL
@@ -170,6 +171,33 @@ The script supports Telegram push with:
 The Telegram message uses monospaced `<pre>` formatting and pads each column to improve alignment.
 
 Sensitive Telegram credentials are intentionally not documented in this README.
+
+## Telegram Command Bot
+
+There is also a Telegram listener script:
+
+```bash
+cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit
+python3 src/telegram_command_bot.py
+```
+
+Behavior:
+
+- it long-polls the configured Telegram bot
+- it accepts `/check` from the configured `telegram.chat_id`
+- on `/check`, it runs the same daily report script immediately
+- it sends the same report table format as the normal 23:00 scheduled run
+
+Supported commands:
+
+- `/check`: generate and send the latest realtime portfolio table
+- `/start`
+- `/help`
+
+Operational note:
+
+- this listener must be running continuously if you want Telegram commands to work
+- it can be installed as a `systemd --user` service for auto-start on boot
 
 ## Manual Run
 
@@ -219,7 +247,7 @@ python3 src/query_poly_positions.py --monthly-report
 A cron job is configured on this machine to run every day at `23:00`:
 
 ```cron
-0 23 * * * cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit && /usr/bin/python3 src/query_poly_positions.py --send-telegram >> /home/young-ai/code/polymarket_relate/check-annual-strategy-profit/data/logs/report_cron.log 2>&1
+0 23 * * * cd /home/young-ai/code/polymarket_relate/check-annual-strategy-profit && /usr/bin/python3 src/query_poly_positions.py >> /home/young-ai/code/polymarket_relate/check-annual-strategy-profit/data/logs/report_cron.log 2>&1
 ```
 
 This daily run also:
@@ -227,7 +255,8 @@ This daily run also:
 - updates `data/reports/polymarket_portfolio_report.md`
 - updates `data/history/polymarket_portfolio_history.json`
 - appends or refreshes the daily `总计` current floating PnL entry in `data/history/total_floating_pnl_history.json`
-- regenerates `data/charts/total_floating_pnl_trend.svg`
+- regenerates `data/charts/total_floating_pnl_trend.png`
+- does not auto-push the daily report to Telegram
 
 A separate cron job is configured to run the monthly report at `22:00` on day `28` of each month:
 
@@ -241,4 +270,4 @@ A separate cron job is configured to run the monthly report at `22:00` on day `2
 - After a reboot, cron remains configured and future daily runs continue automatically
 - If the machine is offline exactly at the scheduled time, that missed run is not automatically replayed later
 - Runtime logs are appended to `data/logs/`
-- The daily SVG chart is generated locally; it does not materially increase API cost
+- The daily PNG chart is generated locally; it does not materially increase API cost
