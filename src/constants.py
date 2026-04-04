@@ -3,7 +3,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-
 API_BASE = "https://data-api.polymarket.com/positions"
 OPINION_API_BASE = "https://openapi.opinion.trade/openapi/positions/user"
 TELEGRAM_API_URL = "https://api.telegram.org/bot{token}/sendMessage"
@@ -29,5 +28,10 @@ DEFAULT_TOTAL_FLOATING_PNL_CHART_FILE = CHARTS_DIR / "total_floating_pnl_trend.p
 DEFAULT_MONTHLY_OUTPUT_FILE = REPORTS_DIR / "monthly-report.md"
 DEFAULT_MONTHLY_HISTORY_FILE = HISTORY_DIR / "monthly_portfolio_history.json"
 DEFAULT_CONFIG_FILE = CONFIG_DIR / "local_config.json"
+
+DEFAULT_UNSETTLED_MARKETS_FILE = REPORTS_DIR / "unsettled_markets.md"
+DEFAULT_UNSETTLED_MARKETS_JSON = REPORTS_DIR / "unsettled_markets.json"
+DEFAULT_UNSETTLED_BY_MARKET_FILE = REPORTS_DIR / "unsettled_by_market.md"
+DEFAULT_UNSETTLED_BY_MARKET_JSON = REPORTS_DIR / "unsettled_by_market.json"
 
 ADDRESS_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")

@@ -1,0 +1,12 @@
+[Unit]
+Description=Polymarket periodic report generator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/young-ai/code/polymarket_relate/check-annual-strategy-profit
+ExecStart=/usr/bin/python3 /home/young-ai/code/polymarket_relate/check-annual-strategy-profit/src/periodic_report_runner.py
+
+[Install]
+WantedBy=default.target
