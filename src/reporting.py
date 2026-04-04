@@ -40,25 +40,25 @@ def render_markdown(
         "",
         f"Generated at: {generated_at_str}",
         "",
-        "| 钱包名称 | 平台 | 钱包地址 | portfolio | 初始成本 | 当前浮动盈亏 | 当天较前一天浮动盈亏变化 |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: |",
+        "| 钱包名称 | 平台 | portfolio | 初始成本 | 当前浮动盈亏 | 当天较前一天浮动盈亏变化 | 钱包地址 |",
+        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
     ]
     for row in visible_rows:
         lines.append(
-            "| {name} | {platform} | {wallet} | {portfolio} | {initial_cost} | {floating_pnl} | {daily_floating_pnl_change} |".format(
+            "| {name} | {platform} | {portfolio} | {initial_cost} | {floating_pnl} | {daily_floating_pnl_change} | {wallet} |".format(
                 name=row["name"],
                 platform=row["platform"],
-                wallet=row["wallet"],
                 portfolio=format_money(as_float(row["portfolio"])),
                 initial_cost=format_money(as_float(row["initial_cost"])),
                 floating_pnl=format_money(as_float(row["floating_pnl"])),
                 daily_floating_pnl_change=format_money(
                     as_float(row["daily_floating_pnl_change"])
                 ),
+                wallet=row["wallet"],
             )
         )
     lines.append(
-        "| 总计 |  |  |  | {initial_cost} | {floating_pnl} | {daily_floating_pnl_change} |".format(
+        "| 总计 |  |  | {initial_cost} | {floating_pnl} | {daily_floating_pnl_change} |  |".format(
             initial_cost=format_money(total_initial_cost),
             floating_pnl=format_money(total_floating_pnl),
             daily_floating_pnl_change=format_money(total_daily_floating_pnl_change),
@@ -82,22 +82,22 @@ def render_telegram_text(
         [
             "钱包名称",
             "平台",
-            "钱包地址",
             "portfolio",
             "初始成本",
-            "当前浮动盈亏",
-            "当天较前一天浮动盈亏变化",
+            "当前盈亏",
+            "当天变化",
+            "钱包地址",
         ]
     ]
     table_rows.extend(
         [
             str(row["name"]),
             str(row["platform"]),
-            str(row["wallet"]),
             format_money(as_float(row["portfolio"])),
             format_money(as_float(row["initial_cost"])),
             format_money(as_float(row["floating_pnl"])),
             format_money(as_float(row["daily_floating_pnl_change"])),
+            str(row["wallet"]),
         ]
         for row in visible_rows
     )
@@ -106,10 +106,10 @@ def render_telegram_text(
             "总计",
             "",
             "",
-            "",
             format_money(total_initial_cost),
             format_money(total_floating_pnl),
             format_money(total_daily_floating_pnl_change),
+            "",
         ]
     )
 
