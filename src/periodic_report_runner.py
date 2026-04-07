@@ -2,7 +2,7 @@
 """
 Periodic report runner.
 
-Runs every 6 hours via systemd timer:
+Runs every 6 hours via cron:
 1. Portfolio report (query_poly_positions.py)
 2. Unsettled markets by wallet (fetch_unsettled_markets.py)
 3. Unsettled markets aggregated (fetch_unsettled_by_market.py)

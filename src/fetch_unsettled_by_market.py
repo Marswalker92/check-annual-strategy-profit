@@ -320,19 +320,6 @@ def main():
         print(f"Markdown report saved to: {output_file}", file=sys.stderr)
         print(f"Raw JSON saved to: {json_file}", file=sys.stderr)
 
-    # Send to Telegram if requested
-    if args.send_telegram:
-        bot_token = require_config(
-            "TELEGRAM_BOT_TOKEN",
-            resolve_secret(args.telegram_bot_token, config, "telegram", "bot_token"),
-        )
-        chat_id = require_config(
-            "TELEGRAM_CHAT_ID",
-            resolve_secret(args.telegram_chat_id, config, "telegram", "chat_id"),
-        )
-        send_telegram_split(bot_token, chat_id, report)
-        print("Report sent to Telegram", file=sys.stderr)
-
 
 if __name__ == "__main__":
     main()
