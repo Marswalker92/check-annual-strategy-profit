@@ -194,6 +194,11 @@ def generate_markdown_report(aggregated_markets: list[dict]) -> str:
         "|---|---------|------|-----------|-------------|---------|---------|---------|--------|"
     )
 
+    # Add Total row first
+    lines.append(
+        f"| | **总计** | | **{total_size:,.2f}** | | **${total_value:,.2f}** | **${total_pnl:,.2f}** | | |"
+    )
+
     for i, market in enumerate(aggregated_markets, 1):
         question = market["title"]
         if len(question) > 50:
