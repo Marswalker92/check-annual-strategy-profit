@@ -17,21 +17,22 @@ DATA_DIR = PROJECT_DIR / "data"
 REPORTS_DIR = DATA_DIR / "reports"
 HISTORY_DIR = DATA_DIR / "history"
 CHARTS_DIR = DATA_DIR / "charts"
+REPORTS_JSON_DIR = REPORTS_DIR / "json"
 
 DEFAULT_WALLET_FILE = CONFIG_DIR / "polymarket_wallets.example.txt"
 DEFAULT_OUTPUT_FILE = REPORTS_DIR / "polymarket_portfolio_report.md"
-DEFAULT_HISTORY_FILE = HISTORY_DIR / "polymarket_portfolio_history.json"
+DEFAULT_HISTORY_FILE = REPORTS_JSON_DIR / "polymarket_portfolio_history.json"
 DEFAULT_TOTAL_FLOATING_PNL_HISTORY_FILE = (
-    HISTORY_DIR / "total_floating_pnl_history.json"
+    REPORTS_JSON_DIR / "total_floating_pnl_history.json"
 )
 DEFAULT_TOTAL_FLOATING_PNL_CHART_FILE = CHARTS_DIR / "total_floating_pnl_trend.png"
 DEFAULT_MONTHLY_OUTPUT_FILE = REPORTS_DIR / "monthly-report.md"
-DEFAULT_MONTHLY_HISTORY_FILE = HISTORY_DIR / "monthly_portfolio_history.json"
+DEFAULT_MONTHLY_HISTORY_FILE = REPORTS_JSON_DIR / "monthly_portfolio_history.json"
 DEFAULT_CONFIG_FILE = CONFIG_DIR / "local_config.json"
 
 DEFAULT_UNSETTLED_MARKETS_FILE = REPORTS_DIR / "unsettled_markets.md"
-DEFAULT_UNSETTLED_MARKETS_JSON = REPORTS_DIR / "unsettled_markets.json"
+DEFAULT_UNSETTLED_MARKETS_JSON = REPORTS_JSON_DIR / "unsettled_markets.json"
 DEFAULT_UNSETTLED_BY_MARKET_FILE = REPORTS_DIR / "unsettled_by_market.md"
-DEFAULT_UNSETTLED_BY_MARKET_JSON = REPORTS_DIR / "unsettled_by_market.json"
+DEFAULT_UNSETTLED_BY_MARKET_JSON = REPORTS_JSON_DIR / "unsettled_by_market.json"
 
 ADDRESS_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")

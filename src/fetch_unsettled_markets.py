@@ -22,6 +22,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from config_loader import load_local_config, require_config, resolve_secret
 from constants import (
@@ -32,6 +33,12 @@ from constants import (
 )
 from telegram_push import send_telegram_split
 from wallets import load_wallets_from_config
+
+BERLIN_TZ = ZoneInfo("Europe/Berlin")
+
+
+def format_berlin_timestamp(dt: datetime) -> str:
+    return dt.astimezone(BERLIN_TZ).strftime("%Y-%m-%d %H:%M:%S %Z (Berlin)")
 
 
 def fetch_positions(user: str) -> list[dict]:
@@ -143,7 +150,7 @@ def generate_markdown_report(all_positions: list[dict]) -> str:
     lines = [
         "# Polymarket 未结算盘口",
         "",
-        f"**查询时间**: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
+        f"**查询时间**: {format_berlin_timestamp(datetime.now(BERLIN_TZ))}",
         f"**涉及钱包**: {len(set(p['wallet_name'] for p in all_positions))} 个",
         f"**未结算仓位**: {len(all_positions)} 个",
         "",
@@ -283,6 +290,7 @@ def main():
 
         # Also save raw JSON for programmatic use
         json_file = DEFAULT_UNSETTLED_MARKETS_JSON
+        json_file.parent.mkdir(parents=True, exist_ok=True)
         json_file.write_text(
             json.dumps(all_unsettled, indent=2, default=str),
             encoding="utf-8",

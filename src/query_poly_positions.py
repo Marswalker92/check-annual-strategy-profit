@@ -5,8 +5,9 @@ import argparse
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from charts import generate_total_floating_pnl_chart
 from config_loader import load_local_config, require_config, resolve_secret
@@ -40,6 +41,8 @@ from reporting import (
 from telegram_push import send_telegram
 from utils import as_float, ensure_parent_dir
 from wallets import load_wallets, load_wallets_from_config
+
+BERLIN_TZ = ZoneInfo("Europe/Berlin")
 
 
 def parse_args() -> argparse.Namespace:
@@ -134,8 +137,8 @@ def run_monthly_report(args: argparse.Namespace) -> int:
     config = load_local_config(config_file)
     monthly_output_file = Path(args.monthly_output).expanduser().resolve()
     monthly_history_file = Path(args.monthly_history_file).expanduser().resolve()
-    generated_at = datetime.now(timezone.utc)
-    generated_local = datetime.now().astimezone()
+    generated_at = datetime.now(BERLIN_TZ)
+    generated_local = generated_at
     current_month_key = f"{generated_local.year:04d}-{generated_local.month:02d}"
 
     wallets = (
@@ -241,7 +244,7 @@ def main() -> int:
     total_floating_pnl_chart_file = (
         Path(args.total_floating_pnl_chart_file).expanduser().resolve()
     )
-    generated_at = datetime.now(timezone.utc)
+    generated_at = datetime.now(BERLIN_TZ)
     report_date = generated_at.date().isoformat()
 
     wallets = (

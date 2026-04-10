@@ -8,6 +8,14 @@ from PIL import Image, ImageDraw, ImageFont
 from utils import as_float, ensure_parent_dir, format_money
 
 
+def _save_chart_outputs(image: Image.Image, chart_file: Path) -> None:
+    ensure_parent_dir(chart_file)
+    png_file = chart_file.with_suffix(".png")
+    webp_file = chart_file.with_suffix(".webp")
+    image.save(png_file, format="PNG")
+    image.save(webp_file, format="WEBP", quality=95, method=6)
+
+
 def _chart_geometry() -> dict[str, int]:
     width = 960
     height = 420
@@ -54,8 +62,7 @@ def _generate_empty_png(chart_file: Path, width: int, height: int) -> None:
         fill="#444444",
         font=font,
     )
-    ensure_parent_dir(chart_file)
-    image.save(chart_file, format="PNG")
+    _save_chart_outputs(image, chart_file)
 
 
 def _generate_png_chart(
@@ -135,8 +142,7 @@ def _generate_png_chart(
     draw.text((width / 2 - 12, height - 18), "Date", fill="#333333", font=font)
     draw.text((12, height / 2 - 10), "PnL", fill="#333333", font=font)
 
-    ensure_parent_dir(chart_file)
-    image.save(chart_file, format="PNG")
+    _save_chart_outputs(image, chart_file)
 
 
 def generate_total_floating_pnl_chart(

@@ -107,6 +107,12 @@ Typical generated files:
 - daily total floating PnL history
 - daily total floating PnL PNG chart
 
+Output directory convention:
+
+- markdown reports are saved in `data/reports/`
+- generated JSON files are saved in `data/reports/json/`
+- charts are saved in `data/charts/`
+
 ## Usage
 
 Examples:

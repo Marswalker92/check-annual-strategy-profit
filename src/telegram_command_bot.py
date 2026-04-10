@@ -11,11 +11,11 @@ import urllib.request
 from pathlib import Path
 
 from config_loader import load_local_config, require_config
-from constants import DEFAULT_CONFIG_FILE, PROJECT_DIR, TELEGRAM_API_URL
+from constants import DEFAULT_CONFIG_FILE, PROJECT_DIR, REPORTS_JSON_DIR, TELEGRAM_API_URL
 from utils import ensure_parent_dir
 
 
-DEFAULT_STATE_FILE = PROJECT_DIR / "data" / "history" / "telegram_bot_state.json"
+DEFAULT_STATE_FILE = REPORTS_JSON_DIR / "telegram_bot_state.json"
 
 
 def parse_args() -> argparse.Namespace:

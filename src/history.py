@@ -71,7 +71,7 @@ def update_total_floating_pnl_history(
     history = load_total_floating_pnl_history(history_file)
     entry = {
         "date": report_date,
-        "generated_at": generated_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "generated_at": generated_at.strftime("%Y-%m-%d %H:%M:%S %Z"),
         "current_floating_pnl": total_floating_pnl,
     }
     updated = False
@@ -121,7 +121,7 @@ def update_monthly_history(
     history = load_history(monthly_history_file)
     current_month_key = f"{generated_local.year:04d}-{generated_local.month:02d}"
     history[current_month_key] = {
-        "generated_at": generated_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "generated_at": generated_at.strftime("%Y-%m-%d %H:%M:%S %Z"),
         "generated_at_local": generated_local.strftime("%Y-%m-%d %H:%M:%S %Z"),
         "local_day": generated_local.day,
         "local_hour": generated_local.hour,

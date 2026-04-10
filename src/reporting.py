@@ -2,8 +2,15 @@ from __future__ import annotations
 
 import html
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from utils import as_float, display_width, format_money, pad_cell
+
+BERLIN_TZ = ZoneInfo("Europe/Berlin")
+
+
+def format_berlin_timestamp(dt: datetime) -> str:
+    return dt.astimezone(BERLIN_TZ).strftime("%Y-%m-%d %H:%M:%S %Z (Berlin)")
 
 
 def should_render_row(row: dict[str, float | str | int]) -> bool:
@@ -33,7 +40,7 @@ def render_markdown(
     total_daily_floating_pnl_change = sum(
         as_float(row["daily_floating_pnl_change"]) for row in visible_rows
     )
-    generated_at_str = generated_at.strftime("%Y-%m-%d %H:%M:%S UTC")
+    generated_at_str = format_berlin_timestamp(generated_at)
 
     lines = [
         "# Polymarket Portfolio Report",
@@ -129,7 +136,7 @@ def render_telegram_text(
     divider = "-+-".join("-" * width for width in col_widths)
     lines = [
         "Polymarket Portfolio Report",
-        f"Generated at: {generated_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
+        f"Generated at: {format_berlin_timestamp(generated_at)}",
         "",
         format_table_row(table_rows[0]),
         divider,
@@ -153,7 +160,7 @@ def render_monthly_markdown(
     lines = [
         "# Monthly Portfolio Report",
         "",
-        f"Generated at: {generated_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
+        f"Generated at: {format_berlin_timestamp(generated_at)}",
         f"Current month key: {current_month_key}",
         f"Previous month key: {previous_month_key_value}",
         "",
@@ -179,7 +186,7 @@ def render_monthly_telegram_text(
     direction = "正" if portfolio_change > 0 else "负" if portfolio_change < 0 else "持平"
     lines = [
         "Monthly Portfolio Report",
-        f"Generated at: {generated_at.strftime('%Y-%m-%d %H:%M:%S UTC')}",
+        f"Generated at: {format_berlin_timestamp(generated_at)}",
         "",
         f"本月: {current_month_key}",
         f"上月: {previous_month_key_value}",
