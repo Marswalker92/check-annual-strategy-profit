@@ -18,19 +18,17 @@ from __future__ import annotations
 
 import json
 import sys
-import urllib.parse
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from config_loader import load_local_config, require_config, resolve_secret
 from constants import (
-    API_BASE,
     DEFAULT_CONFIG_FILE,
     DEFAULT_UNSETTLED_BY_MARKET_FILE,
     DEFAULT_UNSETTLED_BY_MARKET_JSON,
 )
+from polymarket_api import fetch_positions
 from telegram_push import send_telegram_split
 from wallets import load_wallets_from_config
 
@@ -39,37 +37,6 @@ BERLIN_TZ = ZoneInfo("Europe/Berlin")
 
 def format_berlin_timestamp(dt: datetime) -> str:
     return dt.astimezone(BERLIN_TZ).strftime("%Y-%m-%d %H:%M:%S %Z (Berlin)")
-
-
-def fetch_positions(user: str) -> list[dict]:
-    """Fetch all positions for a user with pagination."""
-    rows: list[dict] = []
-    offset = 0
-    while True:
-        params = {
-            "user": user,
-            "sizeThreshold": 0,
-            "limit": 500,
-            "offset": offset,
-            "sortDirection": "DESC",
-        }
-        url = API_BASE + "?" + urllib.parse.urlencode(params)
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/json",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            chunk = json.loads(resp.read().decode("utf-8"))
-        if not chunk:
-            break
-        rows.extend(chunk)
-        if len(chunk) < 500:
-            break
-        offset += 500
-    return rows
 
 
 def is_position_unsettled(position: dict) -> bool:
@@ -169,9 +136,34 @@ def aggregate_by_market(all_positions: list[dict]) -> list[dict]:
             }
         )
 
-    # Sort by total size descending
-    result.sort(key=lambda x: x["total_size"], reverse=True)
     return result
+
+
+def market_key(market: dict) -> str:
+    """Stable market key for current-vs-previous-day comparison."""
+    return f"{market.get('condition_id', '')}::{market.get('outcome', '')}"
+
+
+def apply_daily_pnl_change(
+    aggregated_markets: list[dict], previous_aggregated_markets: list[dict]
+) -> list[dict]:
+    """
+    Add day-over-day pnl change for each market.
+
+    change = current total_pnl - previous total_pnl
+    """
+    previous_map = {
+        market_key(m): float(m.get("total_pnl", 0.0)) for m in previous_aggregated_markets
+    }
+
+    for market in aggregated_markets:
+        prev_pnl = previous_map.get(market_key(market), 0.0)
+        cur_pnl = float(market.get("total_pnl", 0.0))
+        market["daily_pnl_change"] = cur_pnl - prev_pnl
+
+    # Sort by day-over-day pnl change ascending (largest loss first)
+    aggregated_markets.sort(key=lambda x: float(x.get("daily_pnl_change", 0.0)))
+    return aggregated_markets
 
 
 def generate_markdown_report(aggregated_markets: list[dict]) -> str:
@@ -182,6 +174,7 @@ def generate_markdown_report(aggregated_markets: list[dict]) -> str:
     total_size = sum(m["total_size"] for m in aggregated_markets)
     total_value = sum(m["total_current_value"] for m in aggregated_markets)
     total_pnl = sum(m["total_pnl"] for m in aggregated_markets)
+    total_daily_change = sum(float(m.get("daily_pnl_change", 0.0)) for m in aggregated_markets)
 
     lines = [
         "# Polymarket 未结算盘口 (按市场汇总)",
@@ -191,19 +184,20 @@ def generate_markdown_report(aggregated_markets: list[dict]) -> str:
         f"**总持仓数量**: {total_size:,.2f}",
         f"**总当前价值**: ${total_value:,.2f}",
         f"**总浮动盈亏**: ${total_pnl:,.2f}",
+        f"**总较前一天变化盈亏**: ${total_daily_change:,.2f}",
         "",
     ]
 
     lines.append(
-        "| # | 市场描述 | 方向 | 持仓总数量 | 初始平均成本 | 当前价值 | 浮动盈亏 | 截止时间 | 钱包数 |"
+        "| # | 市场描述 | 方向 | 持仓总数量 | 初始平均成本 | 当前价值 | 浮动盈亏 | 当前较前一天变化盈亏 | 截止时间 | 钱包数 |"
     )
     lines.append(
-        "|---|---------|------|-----------|-------------|---------|---------|---------|--------|"
+        "|---|---------|------|-----------|-------------|---------|---------|----------------------|---------|--------|"
     )
 
     # Add Total row first
     lines.append(
-        f"| | **总计** | | **{total_size:,.2f}** | | **${total_value:,.2f}** | **${total_pnl:,.2f}** | | |"
+        f"| | **总计** | | **{total_size:,.2f}** | | **${total_value:,.2f}** | **${total_pnl:,.2f}** | **${total_daily_change:,.2f}** | | |"
     )
 
     for i, market in enumerate(aggregated_markets, 1):
@@ -216,11 +210,12 @@ def generate_markdown_report(aggregated_markets: list[dict]) -> str:
         avg_cost = f"${market['avg_cost']:.4f}"
         cur_val = f"${market['total_current_value']:,.2f}"
         pnl = f"${market['total_pnl']:,.2f}"
+        daily_change = f"${float(market.get('daily_pnl_change', 0.0)):,.2f}"
         end_date = market["end_date"]
         wallet_count = market["wallet_count"]
 
         lines.append(
-            f"| {i} | {question} | {outcome} | {total_size} | {avg_cost} | {cur_val} | {pnl} | {end_date} | {wallet_count} |"
+            f"| {i} | {question} | {outcome} | {total_size} | {avg_cost} | {cur_val} | {pnl} | {daily_change} | {end_date} | {wallet_count} |"
         )
 
     lines.append("")
@@ -306,8 +301,21 @@ def main():
             file=sys.stderr,
         )
 
-    # Aggregate by market
+    # Load previous aggregate snapshot (if exists) for daily pnl change calculation
+    previous_aggregated: list[dict] = []
+    if DEFAULT_UNSETTLED_BY_MARKET_JSON.exists():
+        try:
+            previous_payload = json.loads(
+                DEFAULT_UNSETTLED_BY_MARKET_JSON.read_text(encoding="utf-8")
+            )
+            if isinstance(previous_payload, list):
+                previous_aggregated = previous_payload
+        except Exception:
+            previous_aggregated = []
+
+    # Aggregate by market and enrich with day-over-day pnl change
     aggregated = aggregate_by_market(all_unsettled)
+    aggregated = apply_daily_pnl_change(aggregated, previous_aggregated)
 
     # Generate Markdown
     report = generate_markdown_report(aggregated)

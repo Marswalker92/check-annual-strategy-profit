@@ -18,19 +18,17 @@ from __future__ import annotations
 
 import json
 import sys
-import urllib.parse
-import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from config_loader import load_local_config, require_config, resolve_secret
 from constants import (
-    API_BASE,
     DEFAULT_CONFIG_FILE,
     DEFAULT_UNSETTLED_MARKETS_FILE,
     DEFAULT_UNSETTLED_MARKETS_JSON,
 )
+from polymarket_api import fetch_positions
 from telegram_push import send_telegram_split
 from wallets import load_wallets_from_config
 
@@ -39,37 +37,6 @@ BERLIN_TZ = ZoneInfo("Europe/Berlin")
 
 def format_berlin_timestamp(dt: datetime) -> str:
     return dt.astimezone(BERLIN_TZ).strftime("%Y-%m-%d %H:%M:%S %Z (Berlin)")
-
-
-def fetch_positions(user: str) -> list[dict]:
-    """Fetch all positions for a user with pagination."""
-    rows: list[dict] = []
-    offset = 0
-    while True:
-        params = {
-            "user": user,
-            "sizeThreshold": 0,
-            "limit": 500,
-            "offset": offset,
-            "sortDirection": "DESC",
-        }
-        url = API_BASE + "?" + urllib.parse.urlencode(params)
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/json",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            chunk = json.loads(resp.read().decode("utf-8"))
-        if not chunk:
-            break
-        rows.extend(chunk)
-        if len(chunk) < 500:
-            break
-        offset += 500
-    return rows
 
 
 def is_position_unsettled(position: dict) -> bool:

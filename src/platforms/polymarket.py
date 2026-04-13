@@ -1,41 +1,12 @@
 from __future__ import annotations
 
 import json
-import urllib.parse
 import urllib.request
 
-from constants import API_BASE, POLYGON_RPC_URL, POLY_USDCE_TOKEN_CONTRACT
+from constants import POLYGON_RPC_URL, POLY_USDCE_TOKEN_CONTRACT
+from polymarket_api import fetch_positions
+from poly_realized_pnl import update_realized_pnl_for_wallet, get_wallet_realized_pnl
 from utils import as_float
-
-
-def fetch_positions(user: str) -> list[dict]:
-    rows: list[dict] = []
-    offset = 0
-    while True:
-        params = {
-            "user": user,
-            "sizeThreshold": 0,
-            "limit": 500,
-            "offset": offset,
-            "sortDirection": "DESC",
-        }
-        url = API_BASE + "?" + urllib.parse.urlencode(params)
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Accept": "application/json",
-            },
-        )
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            chunk = json.loads(resp.read().decode("utf-8"))
-        if not chunk:
-            break
-        rows.extend(chunk)
-        if len(chunk) < 500:
-            break
-        offset += 500
-    return rows
 
 
 def erc20_balance_of(
@@ -73,7 +44,18 @@ def summarize_wallet(wallet_entry: dict[str, str]) -> dict[str, float | str | in
     rows = fetch_positions(user)
     positions_initial_value = sum(as_float(row.get("initialValue")) for row in rows)
     positions_current_value = sum(as_float(row.get("currentValue")) for row in rows)
-    total_cash_pnl = sum(as_float(row.get("cashPnl")) for row in rows)
+    
+    # Calculate unrealized PnL (active positions only)
+    unrealized_pnl = positions_current_value - positions_initial_value
+    
+    # Update realized PnL tracking and get cumulative realized PnL from settled positions
+    wallet_key = f"Poly:{user}"
+    today_settled, position_count = update_realized_pnl_for_wallet(wallet_key, rows)
+    realized_pnl = get_wallet_realized_pnl(wallet_key)
+    
+    # Total floating PnL = unrealized + realized
+    total_floating_pnl = unrealized_pnl + realized_pnl
+    
     usdce_balance = erc20_balance_of(
         POLYGON_RPC_URL,
         POLY_USDCE_TOKEN_CONTRACT,
@@ -89,5 +71,7 @@ def summarize_wallet(wallet_entry: dict[str, str]) -> dict[str, float | str | in
         "position_count": len(rows),
         "portfolio": total_current_value,
         "initial_cost": total_initial_value,
-        "floating_pnl": total_cash_pnl,
+        "unrealized_pnl": unrealized_pnl,
+        "realized_pnl": realized_pnl,
+        "floating_pnl": total_floating_pnl,
     }

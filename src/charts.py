@@ -7,6 +7,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 from utils import as_float, ensure_parent_dir, format_money
 
+CHART_START_DATE = "2026-04-13"
+
 
 def _save_chart_outputs(image: Image.Image, chart_file: Path) -> None:
     ensure_parent_dir(chart_file)
@@ -46,6 +48,16 @@ def _normalized_chart_data(
         min_value -= 1
         max_value += 1
     return values, dates, min_value, max_value
+
+
+def _filter_history_from_start_date(
+    history: list[dict[str, float | str]],
+) -> list[dict[str, float | str]]:
+    return [
+        row
+        for row in history
+        if str(row.get("date", "")) >= CHART_START_DATE
+    ]
 
 
 def _generate_empty_png(chart_file: Path, width: int, height: int) -> None:
@@ -158,9 +170,11 @@ def generate_total_floating_pnl_chart(
     margin_bottom = geometry["margin_bottom"]
     chart_file = chart_file.with_suffix(".png")
 
-    if not history:
+    filtered_history = _filter_history_from_start_date(history)
+
+    if not filtered_history:
         _generate_empty_png(chart_file, width, height)
         return
 
-    values, dates, min_value, max_value = _normalized_chart_data(history)
-    _generate_png_chart(chart_file, history)
+    values, dates, min_value, max_value = _normalized_chart_data(filtered_history)
+    _generate_png_chart(chart_file, filtered_history)
