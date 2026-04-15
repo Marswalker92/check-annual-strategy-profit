@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from utils import as_float, display_width, format_money, pad_cell
 
 BERLIN_TZ = ZoneInfo("Europe/Berlin")
+TOTAL_FLOATING_PNL_BASELINE = -2000.0
 
 
 def format_berlin_timestamp(dt: datetime) -> str:
@@ -27,7 +28,10 @@ def should_render_row(row: dict[str, float | str | int]) -> bool:
 
 def total_current_floating_pnl(rows: list[dict[str, float | str | int]]) -> float:
     visible_rows = [row for row in rows if should_render_row(row)]
-    return sum(as_float(row["floating_pnl"]) for row in visible_rows)
+    return (
+        sum(as_float(row["floating_pnl"]) for row in visible_rows)
+        + TOTAL_FLOATING_PNL_BASELINE
+    )
 
 
 def render_markdown(
@@ -36,7 +40,7 @@ def render_markdown(
 ) -> str:
     visible_rows = [row for row in rows if should_render_row(row)]
     total_initial_cost = sum(as_float(row["initial_cost"]) for row in visible_rows)
-    total_floating_pnl = sum(as_float(row["floating_pnl"]) for row in visible_rows)
+    total_floating_pnl = total_current_floating_pnl(visible_rows)
     total_daily_floating_pnl_change = sum(
         as_float(row["daily_floating_pnl_change"]) for row in visible_rows
     )
@@ -46,6 +50,7 @@ def render_markdown(
         "# Polymarket Portfolio Report",
         "",
         f"Generated at: {generated_at_str}",
+        f"备注：总计行当前浮动盈亏已计入基线 {format_money(TOTAL_FLOATING_PNL_BASELINE)} 的额外亏损。",
         "",
         "| 钱包名称 | 平台 | portfolio | 初始成本 | 当前浮动盈亏 | 当天较前一天浮动盈亏变化 | 钱包地址 |",
         "| --- | --- | ---: | ---: | ---: | ---: | --- |",
@@ -82,7 +87,7 @@ def render_telegram_text(
 ) -> str:
     visible_rows = [row for row in rows if should_render_row(row)]
     total_initial_cost = sum(as_float(row["initial_cost"]) for row in visible_rows)
-    total_floating_pnl = sum(as_float(row["floating_pnl"]) for row in visible_rows)
+    total_floating_pnl = total_current_floating_pnl(visible_rows)
     total_daily_floating_pnl_change = sum(
         as_float(row["daily_floating_pnl_change"]) for row in visible_rows
     )

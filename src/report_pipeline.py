@@ -31,7 +31,6 @@ from wallets import load_wallets, load_wallets_from_config
 
 
 BERLIN_TZ = ZoneInfo("Europe/Berlin")
-CHART_BASELINE = -2000.0
 
 
 def resolve_wallets(config: dict, config_file: Path, wallet_file: str):
@@ -87,12 +86,11 @@ def run_daily_report(args) -> int:
     ensure_parent_dir(output_file)
     output_file.write_text(markdown, encoding="utf-8")
     update_history(history_file, report_date, summaries)
-    adjusted_total_floating_pnl = CHART_BASELINE + total_current_floating_pnl(summaries)
     total_floating_pnl_history = update_total_floating_pnl_history(
         total_floating_pnl_history_file,
         report_date,
         generated_at,
-        adjusted_total_floating_pnl,
+        total_current_floating_pnl(summaries),
     )
     from charts import generate_total_floating_pnl_chart
 
